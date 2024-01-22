@@ -1,22 +1,28 @@
 # 飞桨自定义接入硬件后端(算能TPU)
 
-简体中文 | [English](./README.md)
-
 请参考以下步骤进行硬件后端(算能TPU)的编译安装与验证
 
 ## 环境准备与源码同步
+
+### 请注意
+1.模型编译必须要在docker内完成，无法在docker外操作
+2.本程序依赖于算能TPU板卡的 pcie 模式，请确保设备中安装了 libsophgo 板卡驱动和依赖包
 
 ```bash
 # 1) 拉取镜像
 docker pull sophgo/tpuc_dev:latest
 
-# 2) 克隆 PaddleCustomDevice 源码
+# 2) 参考如下命令启动容器
+docker run --privileged --name <YOUR_NAME> -v $PWD:/workspace -it sophgo/tpuc_dev:latest
+# 若容器未启动，则手动启动并进入
+docker start <YOUR_NAME>
+docker exec -it <YOUR_NAME> bash
+
+# 3) 克隆 PaddleCustomDevice 源码
 git clone https://github.com/PaddlePaddle/PaddleCustomDevice
 
-# 3) 参考如下命令启动容器
-docker run --privileged --name <myname1234> -v $PWD:/workspace -it sophgo/tpuc_dev:latest
-
 # 4) 请执行以下命令，以保证 checkout 最新的 PaddlePaddle 主框架源码
+cd PaddleCustomDevice/
 git submodule sync
 git submodule update --remote --init --recursive
 ```
@@ -25,11 +31,13 @@ git submodule update --remote --init --recursive
 ### 编译安装
 
 ```bash
-# 1) 进入硬件后端(算能TPU)目录
-cd PaddleCustomDevice/backends/sophgo
-
-# 2) 编译之前需要先保证环境下装有Paddle WHL包，可以直接安装CPU版本
+# 1) 编译之前需要先保证环境下装有Paddle WHL包，可以直接安装CPU版本
 pip install paddlepaddle==0.0.0 -f https://www.paddlepaddle.org.cn/whl/linux/cpu-mkl/develop.html
+
+# 2) 拉取 custom sophgo backend
+cd backends/
+git clone https://github.com/Remeetu/sophgo.git
+cd sophgo/
 
 # 3) 执行环境脚本
 source envsetup.sh
@@ -47,6 +55,7 @@ pip install build/dist/paddle_custom_sophgo*.whl
 
 ```bash
 # 1) 依赖于 Llama2-TPU 项目编译 bmodel，具体步骤参见 Llama2-TPU 项目的 Readme.md
+# 请于 PaddleCustomDevice 项目的同级目录下，拉取 Llama2-TPU 代码
 git clone https://github.com/sophgo/Llama2-TPU.git
 
 # 2) 将生成的 bmodel 和 模型的解释文件 tokenizer.model 拷贝至 PaddleCustomDevice/backends/sophgo 目录下
